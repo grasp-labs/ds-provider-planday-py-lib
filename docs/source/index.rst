@@ -1,5 +1,5 @@
-Welcome to {{PROJECT_NAME}}'s documentation!
-=============================================
+Welcome to ds-provider-planday-py-lib's documentation!
+==================================================
 
 .. toctree::
    :maxdepth: 2

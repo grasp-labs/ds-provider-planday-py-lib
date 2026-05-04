@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}}
+# ds-provider-planday-py-lib
 
 A Python package from the ds-common library collection.
 
@@ -7,21 +7,21 @@ A Python package from the ds-common library collection.
 Install the package using pip:
 
 ```bash
-pip install {{PROJECT_NAME}}
+pip install ds-provider-planday-py-lib
 ```
 
 Or using uv (recommended):
 
 ```bash
-uv pip install {{PROJECT_NAME}}
+uv pip install ds-provider-planday-py-lib
 ```
 
 ## Quick Start
 
 ```python
-from {{PYTHON_MODULE_NAME}} import __version__
+from ds_provider_planday_py_lib import __version__
 
-print(f"{{PROJECT_NAME}} version: {__version__}")
+print(f"ds-provider-planday-py-lib version: {__version__}")
 ```
 
 ## Features
@@ -37,14 +37,14 @@ print(f"{{PROJECT_NAME}} version: {__version__}")
 
 ```python
 # Example usage
-import {{PYTHON_MODULE_NAME}}
+import ds_provider_planday_py_lib
 
 # Your code examples here
 ```
 
 ## Requirements
 
-- Python 3.9 or higher
+- Python 3.11 or higher
 - <!-- List any required dependencies -->
 
 ## Optional Dependencies
@@ -57,8 +57,8 @@ import {{PYTHON_MODULE_NAME}}
 
 Full documentation is available at:
 
-- [GitHub Repository](https://github.com/grasp-labs/{{GITHUB_REPO}})
-- [Documentation Site](https://grasp-labs.github.io/{{GITHUB_REPO}}/)
+- [GitHub Repository](https://github.com/grasp-labs/ds-provider-planday-py-lib)
+- [Documentation Site](https://grasp-labs.github.io/ds-provider-planday-py-lib/)
 
 ## Development
 
@@ -66,8 +66,8 @@ To contribute or set up a development environment:
 
 ```bash
 # Clone the repository
-git clone https://github.com/grasp-labs/{{GITHUB_REPO}}.git
-cd {{GITHUB_REPO}}
+git clone https://github.com/grasp-labs/ds-provider-planday-py-lib.git
+cd ds-provider-planday-py-lib
 
 # Install development dependencies
 uv sync --all-extras --dev
@@ -76,15 +76,16 @@ uv sync --all-extras --dev
 make test
 ```
 
-See the [README](https://github.com/grasp-labs/{{GITHUB_REPO}}#readme) for more information.
+See the [README][readme] for more information.
+
+[readme]: https://github.com/grasp-labs/ds-provider-planday-py-lib#readme
 
 ## License
 
 This package is licensed under the Apache License 2.0.
-See the [LICENSE-APACHE](https://github.com/grasp-labs/{{GITHUB_REPO}}/blob/main/LICENSE-APACHE)
-file for details.
+See the LICENSE-APACHE file in the repository for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/grasp-labs/{{GITHUB_REPO}}/issues)
-- **Releases**: [GitHub Releases](https://github.com/grasp-labs/{{GITHUB_REPO}}/releases)
+For issues, questions, and contributions, please visit the
+[GitHub repository](https://github.com/grasp-labs/ds-provider-planday-py-lib).
