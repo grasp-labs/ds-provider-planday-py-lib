@@ -108,7 +108,7 @@ uv run pytest tests/test_example.py -v
 │   ├── workflows/            # CI/CD workflows
 │   └── CODEOWNERS            # Code ownership file
 ├── src/
-│   └── ds_provider_planday_py_lib/     # Rename to your module name
+│   └── ds_provider_planday_py_lib/     # Main package module
 │       └── __init__.py
 ├── .pre-commit-config.yaml   # Pre-commit hooks configuration
 ├── tests/                    # Test files
