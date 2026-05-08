@@ -1,0 +1,224 @@
+{
+  "employees": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/employees",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "departments": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/departments",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "employee_groups": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/employeegroups",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "employee_types": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/employeetypes",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "employee_account_management": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/employeeaccountmanagement",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "employee_history": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/employeehistory",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "custom_property_attachment_values": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/custompropertyattachmentvalues",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "skills": {
+    "section": "HR",
+    "endpoint": "hr/v1.0/skills",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "pay_rates": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/payrates/employeeGroups",
+    "methods": ["GET", "PUT"],
+    "pages": true
+  },
+  "allocations": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/salaries/scheduling/timeandcost/allocations",
+    "methods": ["GET", "PUT"],
+    "pages": true
+  },
+  "default_pay_rates": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/payrates/employeeGroups/default",
+    "methods": ["GET", "PUT"],
+    "pages": false
+  },
+  "employee_salaries": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/salaries/employees",
+    "methods": ["GET", "PUT"],
+    "pages": true
+  },
+  "salaries": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/salaries/types",
+    "methods": ["GET"],
+    "pages": false
+  },
+  "salary_identifiers": {
+    "section": "Pay",
+    "endpoint": "pay/v1.0/salariesIdentifiers/employees",
+    "methods": ["GET", "PUT"],
+    "pages": false
+  },
+  "salaried_payroll": {
+    "section": "Payroll",
+    "endpoint": "payroll/v1.0/payroll",
+    "methods": ["GET"],
+    "pages": false
+  },
+  "portal": {
+    "section": "Portal",
+    "endpoint": "portal/v1.0/info",
+    "methods": ["GET"],
+    "pages": false
+  },
+  "breaks": {
+    "section": "Punch Clock",
+    "endpoint": "punchclock/v1.0/punchclockshifts/{punchClockShiftId}/breaks",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "employee_shifts": {
+    "section": "Punch Clock",
+    "endpoint": "punchclock/v1.0/employeeshifts/today",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "punch_clock_shifts": {
+    "section": "Punch Clock",
+    "endpoint": "punchclock/v1.0/punchclockshifts",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "scheduling_history": {
+    "section": "Reports",
+    "endpoint": "reports/v1.0/schedulinghistory",
+    "methods": ["POST"],
+    "pages": true
+  },
+  "shifts": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/shifts",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "sections": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/sections",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "positions": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/positions",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "shift_types": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/shifttypes",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "time_and_cost": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/timeandcost",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "shift_history": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/shifthistory",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "schedule_day": {
+    "section": "Schedule",
+    "endpoint": "schedule/v1.0/scheduleday",
+    "methods": ["GET", "PUT"],
+    "pages": true
+  },
+  "security_groups": {
+    "section": "Security Groups",
+    "endpoint": "security/v1.0/securitygroups",
+    "methods": ["GET", "PUT", "DELETE"],
+    "pages": true
+  },
+  "contact_rules": {
+    "section": "Contact Rules",
+    "endpoint": "contractrules/v1.0/contractrules",
+    "methods": ["GET"],
+    "pages": true
+  },
+  "contact_rules_employees": {
+    "section": "Contact Rules",
+    "endpoint": "contractrules/v1.0/contractrules/employees",
+    "methods": ["GET","PUT"],
+    "pages": true
+  },
+  "accounts": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/accounts",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": true
+  },
+  "adjustments": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/adjustments",
+    "methods": ["GET", "POST"],
+    "pages": true
+  },
+  "account_types": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/accounttypes",
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "pages": false
+  },
+  "absence_records": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/absencerecords",
+    "methods": ["GET","PUT"],
+    "pages": true
+  },
+  "absence_requests": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/absencerequests",
+    "methods": ["GET", "POST", "PUT"],
+    "pages": true
+  },
+  "account_balances": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/accounts/{id}/balance",
+    "methods": ["GET", "POST"],
+    "pages": true
+  },
+  "toil_transactions": {
+    "section": "Absence",
+    "endpoint": "absence/v1.0/accounts/{accountId}/transactions",
+    "methods": ["GET", "POST"],
+    "pages": true
+  }
+}
