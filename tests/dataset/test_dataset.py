@@ -14,7 +14,12 @@ from uuid import uuid4
 
 import pandas as pd
 import pytest
-from ds_resource_plugin_py_lib.common.resource.dataset.errors import ReadError
+from ds_resource_plugin_py_lib.common.resource.dataset.errors import (
+    CreateError,
+    DeleteError,
+    ReadError,
+    UpdateError,
+)
 from ds_resource_plugin_py_lib.common.resource.errors import NotSupportedError
 
 from ds_provider_planday_py_lib.dataset.planday import (
@@ -22,7 +27,7 @@ from ds_provider_planday_py_lib.dataset.planday import (
     PlandayDatasetSettings,
     ReadSettings,
 )
-from ds_provider_planday_py_lib.enums import PlandayDataProducts
+from ds_provider_planday_py_lib.enums import PlandayDataProducts, ResourceType
 
 
 @pytest.fixture
@@ -51,6 +56,45 @@ def dataset(mock_linked_service, dataset_settings):
         version="1.0.0",
         linked_service=mock_linked_service,
         settings=dataset_settings,
+    )
+
+
+@pytest.fixture
+def dataset_with_delete_support(mock_linked_service):
+    """Create a PlandayDataset with endpoint that supports DELETE method.
+
+    Uses EMPLOYEE_GROUP_DETAILS endpoint which supports GET, PUT, DELETE
+    with pages=false, so path parameters are read from row data.
+    """
+    settings = PlandayDatasetSettings(
+        data_product=PlandayDataProducts.EMPLOYEE_GROUP_DETAILS,
+        read=ReadSettings(limit=50),
+    )
+    return PlandayDataset(
+        id=uuid4(),
+        name="test-dataset-delete",
+        version="1.0.0",
+        linked_service=mock_linked_service,
+        settings=settings,
+    )
+
+
+@pytest.fixture
+def dataset_unsupported_methods(mock_linked_service):
+    """Create a PlandayDataset with endpoint that doesn't support create/update/delete.
+
+    Uses EMPLOYEE_TYPE endpoint which only supports GET method.
+    """
+    settings = PlandayDatasetSettings(
+        data_product=PlandayDataProducts.EMPLOYEE_TYPE,
+        read=ReadSettings(limit=50),
+    )
+    return PlandayDataset(
+        id=uuid4(),
+        name="test-dataset-unsupported",
+        version="1.0.0",
+        linked_service=mock_linked_service,
+        settings=settings,
     )
 
 
@@ -328,20 +372,20 @@ class TestEndpointResolution:
 class TestUnsupportedMethods:
     """Test that unsupported methods raise NotSupportedError."""
 
-    def test_create_not_supported(self, dataset):
+    def test_create_not_supported(self, dataset_unsupported_methods):
         """Test create() raises NotSupportedError."""
         with pytest.raises(NotSupportedError):
-            dataset.create()
+            dataset_unsupported_methods.create()
 
-    def test_update_not_supported(self, dataset):
+    def test_update_not_supported(self, dataset_unsupported_methods):
         """Test update() raises NotSupportedError."""
         with pytest.raises(NotSupportedError):
-            dataset.update()
+            dataset_unsupported_methods.update()
 
-    def test_delete_not_supported(self, dataset):
+    def test_delete_not_supported(self, dataset_unsupported_methods):
         """Test delete() raises NotSupportedError."""
         with pytest.raises(NotSupportedError):
-            dataset.delete()
+            dataset_unsupported_methods.delete()
 
     def test_upsert_not_supported(self, dataset):
         """Test upsert() raises NotSupportedError."""
@@ -362,6 +406,457 @@ class TestUnsupportedMethods:
         """Test rename() raises NotSupportedError."""
         with pytest.raises(NotSupportedError):
             dataset.rename()
+
+
+class TestCreateMethod:
+    """Test create() method for POST operations."""
+
+    def test_create_empty_input(self, dataset):
+        """Test create() with empty input returns empty output."""
+        dataset.input = pd.DataFrame()
+        dataset.create()
+
+        assert dataset.output is not None
+        assert len(dataset.output) == 0
+
+    def test_create_single_record(self, dataset, mock_linked_service):
+        """Test creating a single record."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"id": 101, "name": "John"}
+        mock_linked_service.session.post.return_value = mock_response
+
+        # Execute
+        dataset.create()
+
+        # Verify
+        assert len(dataset.output) == 1
+        assert dataset.output.iloc[0]["id"] == 101
+        mock_linked_service.session.post.assert_called_once()
+
+    def test_create_multiple_records(self, dataset, mock_linked_service):
+        """Test creating multiple records."""
+        # Setup
+        dataset.input = pd.DataFrame(
+            [
+                {"id": 1, "name": "John"},
+                {"id": 2, "name": "Jane"},
+            ]
+        )
+        responses = [
+            MagicMock(ok=True, json=MagicMock(return_value={"id": 101, "name": "John"})),
+            MagicMock(ok=True, json=MagicMock(return_value={"id": 102, "name": "Jane"})),
+        ]
+        mock_linked_service.session.post.side_effect = responses
+
+        # Execute
+        dataset.create()
+
+        # Verify
+        assert len(dataset.output) == 2
+        assert mock_linked_service.session.post.call_count == 2
+
+    def test_create_api_error_raises(self, dataset, mock_linked_service):
+        """Test create() raises CreateError on API failure."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_response = MagicMock(ok=False, status_code=400, text="Bad Request")
+        mock_linked_service.session.post.return_value = mock_response
+
+        # Execute
+        with pytest.raises(CreateError) as exc_info:
+            dataset.create()
+
+        assert exc_info.value.details["status_code"] == 400
+
+    def test_create_response_not_json_uses_input(self, dataset, mock_linked_service):
+        """Test create() uses input row if response isn't JSON."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_response = MagicMock(ok=True)
+        mock_response.json.side_effect = ValueError("Not JSON")
+        mock_linked_service.session.post.return_value = mock_response
+
+        # Execute
+        dataset.create()
+
+        # Verify: Input row is used when response isn't JSON
+        assert len(dataset.output) == 1
+        assert dataset.output.iloc[0]["name"] == "John"
+
+    def test_create_unexpected_exception_wrapped(self, dataset, mock_linked_service):
+        """Test create() wraps unexpected exceptions as CreateError."""
+        # Setup: Simulate unexpected error
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_linked_service.session.post.side_effect = RuntimeError("Connection failed")
+
+        # Execute
+        with pytest.raises(CreateError) as exc_info:
+            dataset.create()
+
+        assert "Unexpected error" in exc_info.value.message
+        assert exc_info.value.details["error_type"] == "RuntimeError"
+
+
+class TestUpdateMethod:
+    """Test update() method for PUT operations."""
+
+    def test_update_empty_input(self, dataset):
+        """Test update() with empty input returns empty output."""
+        dataset.input = pd.DataFrame()
+        dataset.update()
+
+        assert dataset.output is not None
+        assert len(dataset.output) == 0
+
+    def test_update_single_record_without_path_params(self, dataset, mock_linked_service):
+        """Test updating a single record (no path params, append ID)."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 101, "name": "John Updated"}])
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"id": 101, "name": "John Updated"}
+        mock_linked_service.session.put.return_value = mock_response
+
+        # Execute
+        dataset.update()
+
+        # Verify: Should PUT to /endpoint/ID
+        call_args = mock_linked_service.session.put.call_args
+        assert "/101" in call_args[0][0]
+        assert len(dataset.output) == 1
+
+    def test_update_missing_id_raises_error(self, dataset):
+        """Test update() raises UpdateError when 'id' column is missing."""
+        # Setup: Row without 'id' column
+        dataset.input = pd.DataFrame([{"name": "John"}])
+
+        # Execute
+        with pytest.raises(UpdateError) as exc_info:
+            dataset.update()
+
+        assert "'id' column required" in exc_info.value.message
+
+    def test_update_api_error_raises(self, dataset, mock_linked_service):
+        """Test update() raises UpdateError on API failure."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 101, "name": "John"}])
+        mock_response = MagicMock(ok=False, status_code=404, text="Not Found")
+        mock_linked_service.session.put.return_value = mock_response
+
+        # Execute
+        with pytest.raises(UpdateError):
+            dataset.update()
+
+    def test_update_unexpected_exception_wrapped(self, dataset, mock_linked_service):
+        """Test update() wraps unexpected exceptions as UpdateError."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 101, "name": "John"}])
+        mock_linked_service.session.put.side_effect = RuntimeError("Connection failed")
+
+        # Execute
+        with pytest.raises(UpdateError) as exc_info:
+            dataset.update()
+
+        assert "Unexpected error" in exc_info.value.message
+        assert exc_info.value.details["error_type"] == "RuntimeError"
+
+
+class TestDeleteMethod:
+    """Test delete() method for DELETE operations."""
+
+    def test_delete_empty_input(self, dataset_with_delete_support):
+        """Test delete() with empty input returns empty output."""
+        dataset_with_delete_support.input = pd.DataFrame()
+        dataset_with_delete_support.delete()
+
+        assert dataset_with_delete_support.output is not None
+        assert len(dataset_with_delete_support.output) == 0
+
+    def test_delete_single_record_without_path_params(self, dataset_with_delete_support, mock_linked_service):
+        """Test deleting a single record (no path params, append ID)."""
+        # Setup
+        dataset_with_delete_support.input = pd.DataFrame([{"id": 101, "name": "John"}])
+        mock_response = MagicMock(ok=True, status_code=204)
+        mock_linked_service.session.delete.return_value = mock_response
+
+        # Execute
+        dataset_with_delete_support.delete()
+
+        # Verify: Should DELETE /endpoint/ID
+        call_args = mock_linked_service.session.delete.call_args
+        assert "/101" in call_args[0][0]
+        assert len(dataset_with_delete_support.output) == 1
+
+    def test_delete_multiple_records(self, dataset_with_delete_support, mock_linked_service):
+        """Test deleting multiple records."""
+        # Setup
+        dataset_with_delete_support.input = pd.DataFrame(
+            [
+                {"id": 101, "name": "John"},
+                {"id": 102, "name": "Jane"},
+            ]
+        )
+        mock_response = MagicMock(ok=True, status_code=204)
+        mock_linked_service.session.delete.return_value = mock_response
+
+        # Execute
+        dataset_with_delete_support.delete()
+
+        # Verify
+        assert len(dataset_with_delete_support.output) == 2
+        assert mock_linked_service.session.delete.call_count == 2
+
+    def test_delete_missing_id_raises_error(self, dataset_with_delete_support):
+        """Test delete() raises DeleteError when 'id' column is missing."""
+        # Setup: Row without 'id' column
+        dataset_with_delete_support.input = pd.DataFrame([{"name": "John"}])
+
+        # Execute
+        with pytest.raises(DeleteError):
+            dataset_with_delete_support.delete()
+
+    def test_delete_api_error_raises(self, dataset_with_delete_support, mock_linked_service):
+        """Test delete() raises DeleteError on API failure."""
+        # Setup
+        dataset_with_delete_support.input = pd.DataFrame([{"id": 101}])
+        mock_response = MagicMock(ok=False, status_code=404, text="Not Found")
+        mock_linked_service.session.delete.return_value = mock_response
+
+        # Execute
+        with pytest.raises(DeleteError):
+            dataset_with_delete_support.delete()
+
+    def test_delete_unexpected_exception_wrapped(self, dataset_with_delete_support, mock_linked_service):
+        """Test delete() wraps unexpected exceptions as DeleteError."""
+        # Setup
+        dataset_with_delete_support.input = pd.DataFrame([{"id": 101}])
+        mock_linked_service.session.delete.side_effect = RuntimeError("Connection failed")
+
+        # Execute
+        with pytest.raises(DeleteError) as exc_info:
+            dataset_with_delete_support.delete()
+
+        assert "Unexpected error" in exc_info.value.message
+        assert exc_info.value.details["error_type"] == "RuntimeError"
+
+
+class TestPathParameterResolution:
+    """Test path parameter resolution for endpoints with templated URLs."""
+
+    def test_endpoint_without_path_params(self, dataset):
+        """Test endpoint without path parameters passes through."""
+        result = dataset._resolve_endpoint_with_path_params("hr/v1.0/employees")
+        assert result == "hr/v1.0/employees"
+
+    def test_has_path_parameters_detection(self, dataset):
+        """Test detecting endpoints with path parameters."""
+        assert dataset._has_path_parameters("hr/v1.0/employees/{id}") is True
+        assert dataset._has_path_parameters("hr/v1.0/employees") is False
+
+    def test_read_with_path_params_from_settings(self, mock_linked_service):
+        """Test read() resolves path params from settings for GET endpoints."""
+        # Setup: Create dataset with endpoint that has path params and supports GET
+        settings = PlandayDatasetSettings(
+            data_product=PlandayDataProducts.EMPLOYEE_GROUP_DETAILS,
+            read=ReadSettings(limit=50, path_params={"id": "group123"}),
+        )
+        dataset = PlandayDataset(
+            id=uuid4(),
+            name="test-path-params",
+            version="1.0.0",
+            linked_service=mock_linked_service,
+            settings=settings,
+        )
+
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"data": []}
+        mock_linked_service.session.get.return_value = mock_response
+
+        # Execute
+        dataset.read()
+
+        # Verify: URL should contain resolved path param
+        call_args = mock_linked_service.session.get.call_args
+        endpoint_url = call_args[0][0]
+        assert "group123" in endpoint_url
+        assert "{id}" not in endpoint_url
+
+    def test_path_params_missing_from_settings_raises_error(self, dataset):
+        """Test that missing path params in settings raises ReadError."""
+        # Setup: Dataset with path param endpoint but no path_params in settings
+        dataset.settings.read.path_params = None
+
+        # Execute - should raise ReadError
+        with pytest.raises(ReadError) as exc_info:
+            dataset._resolve_endpoint_with_path_params("hr/v1.0/employees/{id}")
+
+        assert "'id' not provided" in exc_info.value.message
+
+    def test_path_params_missing_from_row_data_raises_error(self, dataset_with_delete_support):
+        """Test that missing path params in row data raises ReadError."""
+        # Row data without required 'id' field for path param resolution
+        row_data = {"name": "John"}  # Missing 'id'
+
+        # Execute - should raise ReadError
+        with pytest.raises(ReadError) as exc_info:
+            dataset_with_delete_support._resolve_endpoint_with_path_params("hr/v1.0/employeegroups/{id}", row_data)
+
+        assert "'id' not provided" in exc_info.value.message
+
+
+class TestPropertiesAndAttributes:
+    """Test dataset properties and attributes."""
+
+    def test_supports_checkpoint_property(self, dataset):
+        """Test that supports_checkpoint property returns True."""
+        assert dataset.supports_checkpoint is True
+
+    def test_type_property(self, dataset):
+        """Test that type property returns PLANDAY_DATASET."""
+        assert dataset.type == ResourceType.PLANDAY_DATASET
+
+
+class TestUpdateWithMissingId:
+    """Test update() behavior when 'id' is missing from row data."""
+
+    def test_update_missing_id_raises_error(self, dataset, mock_linked_service):
+        """Test update() raises UpdateError when 'id' column is missing."""
+        # Setup: Row without 'id' field
+        dataset.input = pd.DataFrame([{"name": "John"}])
+
+        # Execute
+        with pytest.raises(UpdateError) as exc_info:
+            dataset.update()
+
+        assert "'id' column required" in exc_info.value.message
+
+
+class TestDeleteWithMissingId:
+    """Test delete() behavior when 'id' is missing from row data."""
+
+    def test_delete_missing_id_raises_error(self, dataset_with_delete_support, mock_linked_service):
+        """Test delete() raises DeleteError when 'id' column is missing."""
+        # Setup: Row without 'id' field
+        dataset_with_delete_support.input = pd.DataFrame([{"name": "John"}])
+
+        # Execute
+        with pytest.raises(DeleteError) as exc_info:
+            dataset_with_delete_support.delete()
+
+        assert "'id' column required" in exc_info.value.message
+
+
+class TestEdgeCasesAndBranches:
+    """Test additional edge cases to improve code coverage."""
+
+    def test_read_uses_settings_offset_when_no_checkpoint(self, dataset, mock_linked_service):
+        """Test that read() uses settings.read.offset when checkpoint is not set."""
+        # Setup: No checkpoint, set custom offset in settings
+        dataset.checkpoint = None
+        dataset.settings.read.offset = 10
+
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"data": [{"id": 1}]}
+        mock_linked_service.session.get.return_value = mock_response
+
+        # Execute
+        dataset.read()
+
+        # Verify: First GET call uses offset=10 from settings
+        call_args = mock_linked_service.session.get.call_args
+        params = call_args[1]["params"]
+        assert params["offset"] == 10
+
+    def test_read_empty_checkpoint_returns_offset_zero(self, dataset, mock_linked_service):
+        """Test that read with empty checkpoint starts from offset 0."""
+        # Setup: Empty checkpoint means starting from offset 0
+        dataset.checkpoint = {}
+
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"data": [{"id": 1}]}
+        mock_linked_service.session.get.return_value = mock_response
+
+        # Execute
+        dataset.read()
+
+        # Verify: First GET call includes offset=0 in params
+        call_args = mock_linked_service.session.get.call_args
+        params = call_args[1]["params"]
+        assert params["offset"] == 0
+
+    def test_create_with_valid_json_response(self, dataset, mock_linked_service):
+        """Test create() properly handles valid JSON response."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"id": 101, "name": "John", "created_at": "2025-01-01"}
+        mock_linked_service.session.post.return_value = mock_response
+
+        # Execute
+        dataset.create()
+
+        # Verify: Output contains the API response
+        assert len(dataset.output) == 1
+        assert dataset.output.iloc[0]["id"] == 101
+
+    def test_update_with_valid_json_response(self, dataset, mock_linked_service):
+        """Test update() properly handles valid JSON response."""
+        # Setup
+        dataset.input = pd.DataFrame([{"id": 1, "name": "John"}])
+        mock_response = MagicMock(ok=True)
+        mock_response.json.return_value = {"id": 1, "name": "John Updated"}
+        mock_linked_service.session.put.return_value = mock_response
+
+        # Execute
+        dataset.update()
+
+        # Verify: Output contains the API response
+        assert len(dataset.output) == 1
+        assert dataset.output.iloc[0]["name"] == "John Updated"
+
+    def test_delete_success_returns_input_copy(self, dataset_with_delete_support, mock_linked_service):
+        """Test delete() returns input copy as output on success."""
+        # Setup
+        input_data = pd.DataFrame([{"id": 1, "name": "John"}])
+        dataset_with_delete_support.input = input_data
+        mock_response = MagicMock(ok=True)
+        mock_linked_service.session.delete.return_value = mock_response
+
+        # Execute
+        dataset_with_delete_support.delete()
+
+        # Verify: Output is a copy of input
+        assert len(dataset_with_delete_support.output) == 1
+        assert dataset_with_delete_support.output.iloc[0]["id"] == 1
+        assert dataset_with_delete_support.output.iloc[0]["name"] == "John"
+
+    def test_get_supported_methods_returns_list(self, dataset):
+        """Test _get_supported_methods returns list of methods."""
+        methods = dataset._get_supported_methods()
+        assert isinstance(methods, list)
+        assert "GET" in methods
+        assert "POST" in methods
+        assert "PUT" in methods
+
+    def test_get_supported_methods_on_error(self, dataset):
+        """Test _get_supported_methods returns empty list on error."""
+        # Mock the data_product to None to trigger error
+        dataset.settings.data_product = None
+        methods = dataset._get_supported_methods()
+        assert methods == []
+
+    def test_has_pagination_on_error(self, dataset):
+        """Test _has_pagination returns False on error."""
+        # Mock the data_product to None to trigger error
+        dataset.settings.data_product = None
+        has_paging = dataset._has_pagination()
+        assert has_paging is False
+
+    def test_close_method_does_nothing(self, dataset):
+        """Test close() method executes without error."""
+        # Should not raise any exception
+        dataset.close()
 
 
 class TestOutputPopulation:

@@ -516,8 +516,10 @@ version = "0.1.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "ds-common-logger-py-lib" },
+    { name = "ds-common-serde-py-lib" },
     { name = "ds-protocol-http-py-lib" },
     { name = "ds-resource-plugin-py-lib" },
+    { name = "pandas" },
 ]
 
 [package.optional-dependencies]
@@ -553,9 +555,11 @@ requires-dist = [
     { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "ds-common-logger-py-lib", specifier = ">=0.1.0a6,<1.0.0" },
+    { name = "ds-common-serde-py-lib", specifier = ">=0.1.0b1,<1.0.0" },
     { name = "ds-protocol-http-py-lib", specifier = ">=0.1.0b7,<1.0.0" },
     { name = "ds-resource-plugin-py-lib", specifier = ">=0.1.0rc3,<1.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.7.0" },
+    { name = "pandas", specifier = ">=1.5.0,<3.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.4.0" },

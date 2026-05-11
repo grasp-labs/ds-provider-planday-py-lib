@@ -45,7 +45,9 @@ class PlandayDataProducts(StrEnum):
     # HR
     EMPLOYEES = "employees"
     DEPARTMENTS = "departments"
+    DEPARTMENT_DETAILS = "department_details"
     EMPLOYEE_GROUPS = "employee_groups"
+    EMPLOYEE_GROUP_DETAILS = "employee_group_details"
     EMPLOYEE_TYPE = "employee_types"
     EMPLOYEE_ACCOUNT_MANAGEMENT = "employee_account_management"
     EMPLOYEE_HISTORY = "employee_history"
@@ -53,7 +55,7 @@ class PlandayDataProducts(StrEnum):
     SKILLS = "skills"
 
     # Pay
-    PAY_RATES = "default_pay_rates"
+    PAY_RATES = "pay_rates"
     ALLOCATIONS = "allocations"
     DEFAULT_PAY_RATES = "default_pay_rates"
     EMPLOYEE_SALARIES = "employee_salaries"
@@ -61,7 +63,7 @@ class PlandayDataProducts(StrEnum):
     SALARY_IDENTIFIERS = "salary_identifiers"
 
     # Payroll
-    PAYROLL = "payroll"
+    PAYROLL = "salaried_payroll"
 
     # Portal
     PORTAL = "portal"

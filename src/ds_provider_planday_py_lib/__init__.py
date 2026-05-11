@@ -7,12 +7,14 @@ Description
 A Python package from the ds-provider-planday-py-lib library.
 
 This package provides:
-- Planday Linked Service for OAuth 2.0 refresh token authentication
-- Planday Provider Service for data retrieval and querying
+- Planday Linked Service for OAuth 2.0 authorization-code flow authentication
+- Planday Data Products enumeration for available data endpoints
+- Support for reading and writing data to Planday APIs via authenticated HTTP sessions
 
 Example
 -------
-    >>> from ds_provider_planday_py_lib import PlandayLinkedService, PlandayLinkedServiceSettings
+    >>> from uuid import uuid4
+    >>> from ds_provider_planday_py_lib import PlandayLinkedService, PlandayLinkedServiceSettings, PlandayDataProducts
     >>> linked_service = PlandayLinkedService(
     ...     settings=PlandayLinkedServiceSettings(
     ...         client_id="your_client_id",
